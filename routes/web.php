@@ -37,7 +37,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/company-profile', [CompanyInformationController::class, 'getCompanyInformation'])->name('profile.edit');
-Route::get('/company-quote', [CompanyQuoteController::class, 'getFullCompanyQuote'])->name('profile.edit');
+Route::group(['prefix' => 'company-information', 'middleware' => ['verified']], function () {
+    Route::get('/', [CompanyInformationController::class, 'index'])->name('company-information.index');
+    Route::get('/profile', [CompanyInformationController::class, 'getCompanyInformation'])->name('company-information.profile');
+});
+Route::group(['prefix' => 'company-quote', 'middleware' => []], function () {
+    Route::get('/', [CompanyQuoteController::class, 'index'])->name('company-quote.index');
+    Route::get('/full', [CompanyQuoteController::class, 'getFullCompanyQuote'])->name('company-quote.full');
+});
+
+
 
 require __DIR__.'/auth.php';

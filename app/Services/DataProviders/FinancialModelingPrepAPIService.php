@@ -4,6 +4,8 @@ namespace App\Services\DataProviders;
 
 use App\Interfaces\DataProviderInterface;
 use App\Services\DataProviderAbstract;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Cache;
 
 class FinancialModelingPrepAPIService extends DataProviderAbstract implements DataProviderInterface
@@ -28,7 +30,8 @@ class FinancialModelingPrepAPIService extends DataProviderAbstract implements Da
 
         $url = url($this->baseUrl . "/profile/" . $symbol);
 
-        $response = $this->makeGetRequest($url, $this->apiKey);
+        $response = $this->makeGetRequest($url, $this->apiKey)[0];
+
         Cache::put($cacheKey, $response, now()->addMinutes(3));
 
         return $response;
@@ -44,10 +47,23 @@ class FinancialModelingPrepAPIService extends DataProviderAbstract implements Da
 
         $url = url($this->baseUrl . "/quote/" . $symbol);
 
-        $response = $this->makeGetRequest($url, $this->apiKey);
-        Cache::put($cacheKey, $response, now()->addMinutes(3));
+        $response = $this->makeGetRequest($url, $this->apiKey)[0];
 
-        return $response;
+        $formattedResponse = $this->formattedResponse($response);
+
+        Cache::put($cacheKey, $formattedResponse, now()->addMinutes(3));
+
+        return $formattedResponse;
     }
 
+    private function formattedResponse(array $response)
+    {
+        try {
+            $response['earningsAnnouncement'] = Carbon::parse($response['earningsAnnouncement'])->format('M d, Y h:i a');
+            $response['timestamp'] = Carbon::parse($response['timestamp'])->format('M d, Y h:i a');
+            return $response;
+        } catch (Exception $e) {
+            return $response;
+        }
+    }
 }

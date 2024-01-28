@@ -8,6 +8,8 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class CompanyInformationController extends Controller
 {
@@ -22,6 +24,12 @@ class CompanyInformationController extends Controller
         $this->profileRequestValidator = $profileRequestValidator;
     }
 
+
+    public function index()
+    {
+        return  Inertia::render('CompanyInformation');
+    }
+
     public function getCompanyInformation(Request $request)
     {
         try {
@@ -30,7 +38,7 @@ class CompanyInformationController extends Controller
             $validator = Validator::make($request->all(), $this->profileRequestValidator->rules());
 
             if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
+                return Inertia::render('CompanyInformation', ['errors' => $validator->errors()]);
             } else {
                 $data = $validator->validated();
             }
@@ -38,14 +46,15 @@ class CompanyInformationController extends Controller
             // this endpoint expects one result only
             $result = $this->dataProvider->getCompanyProfile($data['symbol']);
 
-            return response([
-                'company_profile'   => $result[0]
-            ]);
+            $response = [
+                'company_profile' => $result
+            ];
 
+            return Inertia::render('CompanyInformation', ['data' => $response]);
         } catch (Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 500);
+            return Inertia::render('CompanyInformation', ['errors' => [
+                'exception' => $e->getMessage()
+            ]]);
         }
     }
 }

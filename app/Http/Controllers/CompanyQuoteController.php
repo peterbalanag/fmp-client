@@ -7,6 +7,7 @@ use App\Interfaces\DataProviderInterface;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Inertia\Inertia;
 
 class CompanyQuoteController extends Controller
 {
@@ -21,6 +22,11 @@ class CompanyQuoteController extends Controller
         $this->quoteRequestValidator = $quoteRequestValidator;
     }
 
+    public function index()
+    {
+        return  Inertia::render('CompanyQuote');
+    }
+
     public function getFullCompanyQuote(Request $request)
     {
         try {
@@ -28,7 +34,7 @@ class CompanyQuoteController extends Controller
             $validator = Validator::make($request->all(), $this->quoteRequestValidator->rules());
 
             if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
+                return Inertia::render('CompanyQuote', ['errors' => $validator->errors()]);
             } else {
                 $data = $validator->validated();
             }
@@ -36,14 +42,15 @@ class CompanyQuoteController extends Controller
             // this endpoint expects one result only
             $result = $this->dataProvider->getCompanyQuote($data['symbol']);
 
-            return response([
-                'company_quote'   => $result[0]
-            ]);
-        }
-         catch (Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 500);
+            $response = [
+                'full_quote' => $result
+            ];
+
+            return Inertia::render('CompanyQuote', ['data' => $response]);
+        } catch (Exception $e) {
+            return Inertia::render('CompanyQuote', ['errors' => [
+                'exception' => $e->getMessage()
+            ]]);
         }
     }
 }
